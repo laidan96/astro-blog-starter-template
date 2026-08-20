@@ -29,6 +29,19 @@ on:
     # */15 — GitHub's scheduler is delay-prone and coarse; do not go finer.
     - cron: '*/15 * * * *'
   workflow_dispatch: {}
+  # Smoke test on install and on every edit. Without this, a fresh install is
+  # unfalsifiable for an hour: `schedule:` alone produces no run until GitHub's
+  # scheduler gets round to it (delay-prone, worst on a workflow's first ever
+  # run), so "Actions is disabled on this repo" and "the scheduler is just slow"
+  # look identical — and workflow_dispatch needs a credential we do not have
+  # (GITHUB_PAT 401). Pushing the probe now proves the runner works in ~1 min.
+  # Scoped to these two paths on the default branch, so the */15 state commits
+  # (orphan branch `uptime-state`) never retrigger it.
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/lafco-uptime.yml'
+      - '.github/scripts/lafco-probe.sh'
 
 permissions:
   contents: write        # only to commit state/uptime.json on the state branch
