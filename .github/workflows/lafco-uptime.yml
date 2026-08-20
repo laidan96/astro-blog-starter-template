@@ -1,0 +1,93 @@
+# LAF-2249 — off-host liveness probe for lafco-global.com.
+# Install path in the repo: .github/workflows/lafco-uptime.yml
+#
+# Runs on GitHub's runners, NOT on anchi. anchi is the thing being watched; a
+# watcher on the same box reports nothing when the box loses power, and silence
+# is indistinguishable from health (the 17h outage of 2026-08-15 and the 30-day
+# mail blackout of LAF-2215 are the same shape).
+#
+# Zero spend, zero new credentials:
+#   - public repo  -> Actions minutes are unmetered. A PRIVATE repo at */15 is
+#                     ~2,900 min/month against a 2,000-min free tier, i.e. NOT
+#                     free — keep the host repo public or lengthen the cadence.
+#   - no secret    -> nothing to leak in a public repo, and we could not set a
+#                     repo secret anyway while GITHUB_PAT is 401.
+#   - alerting     -> GitHub's native failed-workflow email to the account
+#                     owner. Off-host by construction.
+#
+# State is committed to the orphan branch `uptime-state`, never to the default
+# branch: a tick every 15 minutes must not bury the host repo's own history.
+# The commit is load-bearing, not cosmetic — GitHub disables scheduled workflows
+# after 60 days of repository INACTIVITY and scheduled runs do not count as
+# activity. Bot commits are not a guaranteed re-arm either, which is why
+# laf2249-probe-staleness-watch.sh on anchi watches this workflow back.
+
+name: lafco-global.com uptime (LAF-2249)
+
+on:
+  schedule:
+    # */15 — GitHub's scheduler is delay-prone and coarse; do not go finer.
+    - cron: '*/15 * * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write        # only to commit state/uptime.json on the state branch
+
+concurrency:
+  group: lafco-uptime
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout probe script (default branch)
+        uses: actions/checkout@v4
+
+      - name: Checkout state branch
+        uses: actions/checkout@v4
+        continue-on-error: true          # first ever run: branch does not exist
+        with:
+          ref: uptime-state
+          path: _state
+
+      - name: Probe (three assertions + debounce)
+        id: probe
+        env:
+          PROBE_STATE: _state/state/uptime.json
+        run: |
+          mkdir -p _state/state
+          chmod +x .github/scripts/lafco-probe.sh
+          set +e
+          .github/scripts/lafco-probe.sh | tee /tmp/probe.log
+          rc=${PIPESTATUS[0]}
+          set -e
+          echo "rc=$rc" >> "$GITHUB_OUTPUT"
+
+      # Commit BEFORE failing the job, so the state machine advances even on a
+      # DOWN tick. If state only advanced on green, a long outage would re-page
+      # every 15 minutes forever and get muted — a muted watcher is the same as
+      # no watcher.
+      - name: Commit heartbeat + state to the uptime-state branch
+        if: always()
+        run: |
+          cd _state
+          git init -q 2>/dev/null || true
+          git config user.name  "lafco-uptime-probe"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if [ ! -d .git ] || ! git rev-parse --verify HEAD >/dev/null 2>&1; then
+            git init -q
+            git checkout -q --orphan uptime-state
+            git remote add origin "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" 2>/dev/null || true
+          fi
+          git add -A state
+          git diff --cached --quiet && { echo "no state change"; exit 0; }
+          git commit -q -m "uptime: $(python3 -c "import json;print(json.load(open('state/uptime.json'))['verdict'])")"
+          git push -q origin HEAD:uptime-state
+
+      - name: Fail the run if the site is down (this failure IS the alert)
+        if: always()
+        run: |
+          cat /tmp/probe.log
+          [ "${{ steps.probe.outputs.rc }}" = "0" ] || exit 1
