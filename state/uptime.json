@@ -2,17 +2,17 @@
   "schema": 1,
   "issue": "LAF-2249",
   "target": "https://lafco-global.com/vi/",
-  "checked_at": "2026-08-21T08:07:02Z",
-  "ticks": 33,
-  "state": "down",
-  "fault": "origin_unreachable",
-  "detail": "/vi/ no response (dns/tcp/tls)",
+  "checked_at": "2026-08-21T08:59:30Z",
+  "ticks": 34,
+  "state": "ok",
+  "fault": "none",
+  "detail": "",
   "http": {
-    "live": "000",
-    "bytes": 0
+    "live": "200",
+    "bytes": 39937
   },
-  "consecutive_failures": 2,
-  "last_alert_tick": 33,
-  "last_ok": "2026-08-21T06:17:35Z",
-  "verdict": "DOWN — origin_unreachable: /vi/ no response (dns/tcp/tls) (confirmed over 2 consecutive ticks)"
+  "consecutive_failures": 0,
+  "last_alert_tick": 0,
+  "last_ok": "2026-08-21T08:59:30Z",
+  "verdict": "RECOVERED — https://lafco-global.com/vi/ back to 200 after 2 failed tick(s)"
 }
