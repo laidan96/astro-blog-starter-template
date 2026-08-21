@@ -2,8 +2,8 @@
   "schema": 1,
   "issue": "LAF-2249",
   "target": "https://lafco-global.com/vi/",
-  "checked_at": "2026-08-21T11:43:53Z",
-  "ticks": 38,
+  "checked_at": "2026-08-21T12:15:30Z",
+  "ticks": 39,
   "state": "ok",
   "fault": "none",
   "detail": "",
@@ -13,6 +13,6 @@
   },
   "consecutive_failures": 0,
   "last_alert_tick": 0,
-  "last_ok": "2026-08-21T11:43:53Z",
+  "last_ok": "2026-08-21T12:15:30Z",
   "verdict": "OK — 200, 40009B, 404-identity intact"
 }
