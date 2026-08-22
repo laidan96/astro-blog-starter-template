@@ -2,17 +2,17 @@
   "schema": 1,
   "issue": "LAF-2249",
   "target": "https://lafco-global.com/vi/",
-  "checked_at": "2026-08-22T08:02:21Z",
-  "ticks": 67,
+  "checked_at": "2026-08-22T08:49:08Z",
+  "ticks": 68,
   "state": "ok",
   "fault": "none",
   "detail": "",
   "http": {
     "live": "200",
-    "bytes": 40301
+    "bytes": 43271
   },
   "consecutive_failures": 0,
   "last_alert_tick": 0,
-  "last_ok": "2026-08-22T08:02:21Z",
-  "verdict": "OK — 200, 40301B, 404-identity intact"
+  "last_ok": "2026-08-22T08:49:08Z",
+  "verdict": "OK — 200, 43271B, 404-identity intact"
 }
